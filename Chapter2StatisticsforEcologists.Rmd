@@ -1,0 +1,1115 @@
+---
+title: "Statistics for Ecologists"
+output:  
+  prettydoc::html_pretty:
+    base_format: rmarkdown::html_document
+    toc: true
+    theme: leonids
+    toc_depth: 3 # upto three depths of headings (specified by #, ##, ###)
+    number_sections: false ## if you want number sections at each toc
+    highlight: github # specifies the syntax highlighting style
+    fig_caption: yes
+
+---
+
+```{r include=FALSE}
+install.packages('prettydoc')
+library(prettydoc)
+```
+
+```{r devtools, include=FALSE}
+install.packages("devtools")
+```
+
+```{r captioner, include=FALSE}
+devtools::install_github("adletaw/captioner")
+```
+
+<style>
+p.caption {
+  font-size: 0.6cm;
+}
+</style>
+
+\newpage
+
+# Chapter 2: Introduction to Statistics
+
+*****
+## 2.2 Parameters, statistics, standard deviations, standard error
+
+*****
+
+**Data input**
+
+`read.csv()` 
+
+```yaml
+birds <- read.csv("ddt.csv", header = TRUE, as.is = TRUE)
+birds
+```
+**Draw some basic plots of the data to get a feel for the general shape of the distribution of data values, check for outliers, ect.**
+
+Do some preliminary plots using `ggplot()` function. With only a few data points, the plots are not that interesting. This also illustrates how to arrange several plots into a grid and how to save plots to an external file
+
+```yaml
+#A time plot of reading over the order collected
+plotorder <- ggplot(data=birds, aes(x=1:length(ddt), y=ddt))+
+ggtitle("DDT readings for all birds in order of collection")+
+xlab("Sample Order")+ylab("DDT readings")+
+geom_point()+
+geom_line()
+plotorder
+
+# A regular dot plot with a box plot overlaid
+plotdot <- ggplot(data=birds, aes(x="ALL birds", y=ddt))+
+ggtitle("DDT readings for all birds")+
+xlab("Birds")+ylab("DDT readings")+
+geom_point(position=position_jitter(w=0.1))+
+geom_boxplot(alpha=0.2, width=0.2)
+plotdot
+
+# A (non-interesting) histogram
+plothist <- ggplot(data=birds, aes(x=ddt))+
+ggtitle("DDT readings for all birds")+
+xlab("DDT")+
+geom_histogram(binwidth=2)
+plothist
+
+# A normal probability plot - note how the aes() changes
+plotnormpp <- ggplot(data=birds, aes(sample=ddt))+
+ggtitle("DDT readings for all birds")+
+xlab("DDT")+
+stat_qq()
+plotnormpp
+
+# Put them together into one big plot
+gridplots <- arrangeGrob(plotorder, plotdot, plothist, plotnormpp, nrow=2, ncol=2)
+gridplots
+plot(gridplots)
+ggsave(plot=gridplots, file=’ddt-R-002.png’)
+```
+
+```{r echo=FALSE, out.width='75%', fig.align='center', fig.cap='  '}
+knitr::include_graphics('plot1.png')
+```
+**Compute some summary statistics about the data**
+
+```yaml
+summary(birds$ddt)
+cat(" The number of observations is", length(birds$ddt), "\n")
+cat(" The sample mean is", mean(birds$ddt) , "\n")
+cat(" The sample std deviation is", sd(birds$ddt) , "\n")
+report <- plyr::summarize(birds, n.birds=length(ddt),
+mean.ddt=mean(ddt),
+sd.ddt=sd(ddt))
+cat(" A summary report of the ddt data is\n")
+report
+```
+giving:
+```yaml
+Min. 1st Qu. Median Mean  3rd Qu. Max.
+96.0  97.5   101.0  100.8  103.0  106.0
+The number of observations is 10
+The sample mean is 100.8
+The sample std deviation is 3.521363
+A summary report of the ddt data is
+n.birds mean.ddt sd.ddt
+1    10   100.8 3.521363
+```
+
+***
+## 2.3 Confidence Intervals
+
+***
+
+**Compute sample statistics**
+
+```yaml
+summary(birds$ddt)
+cat(" The number of observations is", length(birds$ddt), "\n")
+cat(" The sample mean is", mean(birds$ddt) , "\n")
+cat(" The sample std deviation is", sd(birds$ddt) , "\n")
+report <- plyr::summarize(birds, n.birds=length(ddt),
+mean.ddt=mean(ddt),
+sd.ddt=sd(ddt))
+cat(" A summary report of the ddt data is\n")
+report
+```
+
+giving:
+
+```yaml
+Min.  1st Qu. Median Mean  3rd Qu.  Max.
+96.0  97.5    101.0  100.8  103.0   106.0 
+The number of observations is 10
+The sample mean is 100.8
+The sample std deviation is 3.521363
+A summary report of the ddt data is
+n. birds mean.ddt sd.ddt
+1   10    100.8   3.521363
+```
+
+**Doing one sample t-test** 
+
+It turns out that we have to also account for the fact that s is only an estimate of σ (s can also vary from
+sample to sample) and so the estimated se may not equal the theoretical standard error. Consequently,
+the multiplier (2) has to be increased slightly to account for this.
+R does this using the `t.test()` function:
+
+```yaml
+ddt.ci <- t.test(birds$ddt)
+ddt.ci
+names(ddt.ci)
+ddt.ci$conf.int
+```
+
+giving:
+
+```yaml
+One Sample t-test
+data: birds$ddt
+t = 90.521, df = 9, p-value = 1.242e-14
+alternative hypothesis: true mean is not equal to 0
+95 percent confidence interval:
+98.28097 103.31903
+sample estimates:
+mean of x
+100.8
+[1] "statistic" "parameter" "p.value" "conf.int" "estimate" "null.value" "stderr" "alternative" "method" "data.name"
+[1] 98.28097 103.31903
+attr(,"conf.level")
+[1] 0.95
+```
+**Be awared what the plots tell you**
+
+The interval is NOT an interval for the individual values, i.e. it is NOT CORRECT to say
+that a 95% confidence interval includes 95% of the raw data. Rather the confidence interval tells you a plausible range for the population mean µ. Also, it is not a confidence interval for the sample mean
+(which you know to be 100.8) but rather for the unknown population mean µ. **These two points are the
+most common mis-interpretations of confidence intervals.**
+
+
+It is very easy to add new plotting layers to existing ggplot in R. The code below uses the geom_errorbar()
+function to add a confidence interval to an existing chart (the dot plot) as illustrated below:
+
+```yaml
+# Add the confidence interval on the dot plot
+# If you use ggplot, you can "reuse" and add to previouis plots
+plotdotci <- plotdot +
+geom_errorbar(aes(y=ddt.ci$estimate,
+ymin=ddt.ci$conf.int[1], ymax=ddt.ci$conf.int[2]),
+width=0.05, color="red", size=2, linetype=2)
+plotdotci
+```
+
+giving:
+
+```{r plot2, echo=FALSE, out.width='75%', fig.align='center'}
+knitr::include_graphics('plot2.png')
+```
+
+Notice that the upper and lower bars of a box-plot and the upper and lower limits of the confidence intervals are telling you different stories. Be sure that you understand the difference.
+
+***
+## 2.4 Hypothesis testing
+
+***
+
+### *Comparing the population parameter against a known standard*
+
+**Doing some summary statistics**
+```yaml
+Min. 1st Qu. Median Mean 3rd Qu. Max.
+96.0 97.5 101.0 100.8 103.0 106.0
+The number of observations is 10
+The sample mean is 100.8
+The sample std deviation is 3.521363
+A summary report of the ddt data is
+n.birds mean.ddt sd.ddt
+1 10 100.8 3.521363
+```
+
+```yaml
+One Sample t-test
+data: birds$ddt
+t = 90.521, df = 9, p-value = 1.242e-14
+alternative hypothesis: true mean is not equal to 0
+95 percent confidence interval:
+98.28097 103.31903
+sample estimates:
+mean of x
+100.8
+[1] "statistic" "parameter" "p.value" "conf.int" "estimate" "null.value" "stderr" "alternative" "method" "data.name"
+[1] 98.28097 103.31903
+attr(,"conf.level")
+[1] 0.95
+```
+**Step in a hypothesis**
+
+**1. formulate hypothesis**
+* the null hypothesis: (H<sub>0</sub> or H) indicates the state of ignorance or no effect
+* the alternat hypothesis (H<sub>1</sub> or A) indicates the effect that is to be detected if present
+
+**2. collect data**: using probability sampling methods and the RRRs
+
+**3. compute a test-statistic and *p*-value**: the test-statistic is computed from the data and measures the discrepancy between the observed data and the null hypothesis, i.e. how far is the obsrved sample mean of 100.8 ppm from the hypothesized value of 98 ppm?
+
+We use `t.test()` function in R again, except this time we specify the population value of interest:
+
+**H<sub>0</sub> = 98**
+```yaml
+ddt.test.98 <- t.test(birds$ddt, mu=98)
+ddt.test.98
+```
+
+giving
+
+```yaml
+One Sample t-test
+data: birds$ddt
+t = 2.5145, df = 9, p-value = 0.03307
+alternative hypothesis: true mean is not equal to 98
+95 percent confidence interval:
+98.28097 103.31903
+sample estimates:
+mean of x
+100.8
+```
+**H<sub>0</sub> = 80**
+```yaml
+ddt.test.80 <- t.test(birds$ddt, mu=80)
+ddt.test.80
+```
+
+giving
+
+```yaml
+One Sample t-test
+data: birds$ddt
+t = 18.679, df = 9, p-value = 1.657e-08
+alternative hypothesis: true mean is not equal to 80
+95 percent confidence interval:
+98.28097 103.31903
+sample estimates:
+mean of x
+100.8
+```
+
+**H<sub>0</sub> = 100**
+```yaml
+ddt.test.100 <- t.test(birds$ddt, mu=100)
+ddt.test.100
+```
+giving:
+
+```yaml
+One Sample t-test
+data: birds$ddt
+t = 0.71842, df = 9, p-value = 0.4907
+alternative hypothesis: true mean is not equal to 100
+95 percent confidence interval:
+98.28097 103.31903
+sample estimates:
+mean of x
+100.8
+```
+
+```{r t-test, echo=FALSE, fig.align='center', out.width='30%', fig.show='hold',fig.cap='cho'}
+knitr::include_graphics(c('tTest1.png', 'tTest2.png', 'tTest3.png'))
+```
+
+**4. Make a decision**: How are the test statistic and *p*-value used?
+
+### *Comparing the population parameter between two groups*
+
+**1. formulate hypothesis:**
+
+- H : µm = µf or H : µm − µf = 0
+- A : µm != µf or H : µm − µf != 0
+
+**2. collect data**: using probability sampling methods and the RRRs
+
+**3. doing statistic with the raw data**
+
+- **start by summary plots of the data:**
+
+```yaml
+# Get side-by-side dot plot
+plotdot <- ggplot(data=birds, aes(x=sex, y=ddt))+
+ggtitle("DDT readings broken out by sex")+
+xlab("Sex of birds")+ylab("DDT readings")+
+geom_point(position=position_jitter(w=0.1))+
+geom_boxplot(alpha=0.2, width=0.2)
+plotdot
+```
+
+giving:
+
+```{r plot3, echo=FALSE, out.width= '100%', fig.align='center'}
+knitr::include_graphics('plot3.png')
+```
+
+- **next, compute some summary statistics for each group:**
+
+```yaml
+# Compute some summary statistics using ddply and summarize
+report <- plyr::ddply(birds, "sex", plyr::summarize,
+n.birds=length(ddt),
+mean.ddt = mean(ddt),
+sd.ddt = sd(ddt))
+report
+# Compute some summary statistics by sex using my helper function
+report <- plyr::ddply(birds, "sex", sf.simple.summary, variable="ddt", crd=TRUE)
+report
+```
+giving:
+
+```yaml
+ sex n.birds mean.ddt sd.ddt
+1 f    5     104.8    1.483240
+2 m    5     100.4    2.073644
+ sex n nmiss mean  sd       se        lcl       ucl
+1 f  5 0     104.8 1.483240 0.6633250 102.95831 106.6417
+2 m  5 0     100.4 2.073644 0.9273618 97.82523  102.9748
+```
+
+- **we also compute the 95% confidence intervals for each group:**
+
+```yaml
+ci <- plyr::ddply(birds, "sex", function(x){
+# compute the ci for the part of the dataframe x
+oneci <- t.test(x$ddt)$conf.int
+names(oneci) <- c("lcl","ucl")
+return(oneci)
+})
+ci
+```
+
+giving:
+
+```yaml
+  sex lcl       ucl
+1 f   102.95831 106.6417
+2 m   97.82523  102.9748
+```
+
+- **estimate the difference in the means** using a statistical technique called (for historical reasons) a “t-test"
+
+```yaml
+result <- t.test(ddt ~ sex, data=birds)
+#compute the se
+names(result)
+result$diff <- sum(result$estimate*c(1,-1))
+result$se <- abs(result$diff) /result$statistic
+result
+cat("Estimated diff in MEANS is:", result$diff, " with an estimated SE ", result$se)
+```
+
+giving:
+
+```yaml
+[1] "statistic" "parameter" "p.value" "conf.int" "estimate" "null.value
+Welch Two Sample t-test
+data: ddt by sex
+t = 3.8591, df = 7.2439, p-value = 0.005823
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+1.722206 7.077794
+sample estimates:
+mean in group f mean in group m
+104.8 100.4
+Estimated diff in MEANS is: 4.4 with an estimated SE 1.140175
+```
+
+# Chapter 5: Single factor - Completely randomized design (a.k.a one-way design)
+
+***
+## 5.5 Example - comparing mean heigths of children - two-sample *t*-test
+
+***
+
+**Data import**
+
+```yaml
+htwt12 <- read.csv(’htwt12.csv’, header=TRUE, as.is=TRUE, strip.white=TRUE)
+htwt12$Gender <- factor(htwt12$Gender)
+htwt12[1:12,]
+
+```
+
+The first few lines of the data frame are shown below:
+
+```yaml
+Gender Height Weight
+1 f 62.3 105.0
+2 f 63.3 108.0
+3 f 58.3 93.0
+4 f 58.8 89.0
+5 f 59.5 78.5
+6 f 61.3 115.0
+7 f 56.3 83.5
+8 f 64.3 110.5
+9 f 61.3 94.0
+10 f 59.8 84.5
+11 f 59.5 93.5
+12 f 60.0 109.0
+
+```
+The two-sample test proceedsas follows
+
+1. **Specify the hypotheses**
+
+```yaml
+  H: µf = µm or µf − µm = 0
+  A: µf != µm or µf − µm != 0
+```
+
+2. **Collect data and do some preliminary plots**
+
+```yaml
+plotprelim <- ggplot2::ggplot(data=htwt12, aes(x=Gender, y=Height))+
+ggtitle("Height vs. Gender at 12 years of age")+
+xlab("Gender")+ ylab("Height (in)")+
+geom_point(size=4, position=position_jitter(height=0.1, width=0.1))+
+geom_boxplot(alpha=0.2, notch=TRUE, outlier.shape=NA)
+plotprelim
+
+```
+
+The final plot is:
+
+```{r chapter5-pic1, echo=FALSE, fig.align='default', out.width='75%'}
+knitr::include_graphics('5.1.png')
+```
+
+Then make a summary table:
+
+```yaml
+report <- plyr::ddply(htwt12, "Gender", plyr::summarize,
+n.child = length(Height),
+mean.height= mean(Height),
+sd.height = sd(Height))
+report
+report <- plyr::ddply(htwt12, "Gender", sf.simple.summary, variable="Height", crd=
+report
+```
+
+giving:
+
+```yaml
+Gender n.child mean.height sd.height
+1 f 30 59.51000 2.987832
+2 m 33 58.88485 3.073691
+Gender n nmiss mean sd se lcl ucl
+1 f 30 0 59.51000 2.987832 0.5455009 58.39433 60.62567
+2 m 33 0 58.88485 3.073691 0.5350609 57.79497 59.97473
+```
+
+3. **Compute a test-statistic, a *p*-value and make a decision**
+
+The two-sample t-test is computed using the `t.test()` function:
+
+```yaml
+result <- t.test(Height ~ Gender, data=htwt12)
+# compute the se based on t.value = estimated diff/ se(diff )
+names(result)
+result$diff <- sum(c(1,-1)*result$estimate)
+result
+cat("Estimated difference in means is ",result$diff,
+" SE( ",result$stderr,")\n")
+```
+
+with output:
+
+```yaml
+[1] "statistic" "parameter" "p.value" "conf.int" "estimate" "null.v
+Welch Two Sample t-test
+data: Height by Gender
+t = 0.81815, df = 60.714, p-value = 0.4165
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+-0.9029228 2.1532258
+sample estimates:
+mean in group f mean in group m
+59.51000 58.88485
+Estimated difference in means is 0.6251515 SE( 0.7641083 )
+```
+
+The `t.test()` function can also be used to obtain the two-sample equal-variance t-test:
+
+```yaml
+result <- t.test(Height ~ Gender, data=htwt12, var.equal=TRUE)
+result$diff <- sum(c(1,-1)*result$estimate)
+result
+cat("Estimated difference in means is ",result$diff,
+" SE( ",result$stderr,")\n")
+```
+
+with output:
+
+```yaml
+Two Sample t-test
+data: Height by Gender
+t = 0.81702, df = 61, p-value = 0.4171
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+-0.9048733 2.1551764
+sample estimates:
+mean in group f mean in group m
+59.51000 58.88485
+Estimated difference in means is 0.6251515 SE( 0.7651564 )
+```
+
+Because the two sample standard deviations are so similar, the results are virtually identical between the
+two variants of the t-test.
+
+**Modern Statistical Practice recommends that you ALWAYS use the unequal variance t-test (the
+first test) as it always works properly** regardless of the standard deviations being approximately equal or
+not. The latter “equal-variance” t-test is of historical interest, but is a special case of the more general
+Analysis of Variance methods which will be discussed later in this chapter.
+
+***
+## 5.6 Example - Fat content and mean tumor weights - two-sample *t*-test
+
+***
+
+**Data import**
+
+```yaml
+rats <- read.csv(’fattumor.csv’, header=TRUE, as.is=TRUE, strip.white=TRUE)
+rats$Diet <- as.factor(rats$Diet)
+rats[1:12,]
+```
+
+The first few lines of the raw data are shown below:
+
+```yaml
+Diet TumorWeight
+1 High Fat 12.3
+2 High Fat 10.2
+3 High Fat 11.8
+4 High Fat 11.7
+5 High Fat 11.1
+6 High Fat 14.6
+7 High Fat 11.9
+8 High Fat 9.8
+9 High Fat 11.3
+10 High Fat 10.3
+11 Low Fat 12.2
+12 Low Fat 9.7
+```
+
+1. **Formulate the hypotheses**
+
+```yaml
+  H: µH = µL or µH − µL = 0
+  A: µH != µL or µH − µL != 0
+```
+
+2.**Collect data and look at summary statistics**
+
+```yaml
+# make the plot using ggplot (turn off outliers because we alreay have points plot
+plotprelim <- ggplot(data=rats, aes(x=Diet, y=TumorWeight))+
+geom_boxplot(alpha=0.2, notch=TRUE, outlier.shape=NA)+ # don’t repeat outlier po
+geom_jitter(size=4, position=position_jitter(width=0.1, height=0.1))+
+xlab("Diet\n Point jittered to prevent overplotting")+
+ylab("Tumor weight (g)")+
+ggtitle("Tumor Weight vs. Diet with overlaid boxplots")
+plotprelim
+```
+
+The preliminary plot is:
+
+```{r fig5-2, echo=FALSE, fig.align='default', out.width='75%'}
+knitr::include_graphics('5.2.png')
+```
+
+**Summary table**
+
+```yaml
+report <- plyr::ddply(rats, "Diet", plyr::summarize,
+n.rats = length(TumorWeight),
+mean.weight= mean(TumorWeight),
+sd.weight = sd(TumorWeight))
+report
+report <- plyr::ddply(rats, "Diet", sf.simple.summary, variable="TumorWeight", crd
+report
+```
+
+giving:
+
+```yaml
+Diet n.rats mean.weight sd.weight
+1 High Fat 10 11.50 1.364633
+2 Low Fat 10 9.96 1.307415
+Diet n nmiss mean sd se lcl ucl
+1 High Fat 10 0 11.50 1.364633 0.4315347 10.523801 12.47620
+2 Low Fat 10 0 9.96 1.307415 0.4134408 9.024732 10.89527
+```
+
+3.**Find the test-statistic, the *p*-value and make a decision**
+
+```yaml
+result <- t.test(TumorWeight ~ Diet, data=rats)
+result$diff.in.means <- sum(result$estimate*c(1,-1))
+names(result$diff.in.means)<- "diff.in.means"
+result
+cat("Estimated difference in means:",result$diff.in.means,"\n")
+cat("Estimated se for diff in means:",result$stderr,"\n")
+```
+
+with output:
+
+```yaml
+Welch Two Sample t-test
+data: TumorWeight by Diet
+t = 2.5769, df = 17.967, p-value = 0.01902
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+0.2842717 2.7957283
+sample estimates:
+mean in group High Fat mean in group Low Fat
+11.50 9.96
+Estimated difference in means: 1.54
+Estimated se for diff in means: 0.5976249
+```
+
+The `t.test()` function can also be used to obtain the two-sample equal-variance t-test:
+
+```yaml
+result <- t.test(TumorWeight ~ Diet, data=rats, var.equal=TRUE)
+result$diff.in.means <- sum(result$estimate*c(1,-1))
+names(result$diff.in.means)<- "diff.in.means"
+result
+cat("Estimated difference in means:",result$diff.in.means,"\n")
+cat("Estimated se for diff in means:",result$stderr,"\n")
+```
+
+with output:
+
+```yaml
+Two Sample t-test
+data: TumorWeight by Diet
+t = 2.5769, df = 18, p-value = 0.019
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+0.2844366 2.7955634
+sample estimates:
+mean in group High Fat mean in group Low Fat
+11.50 9.96
+Estimated difference in means: 1.54
+Estimated se for diff in means: 0.5976249
+```
+
+In this experiment, the sample standard deviations are approximately equal, so the equal variance
+t-test give virtually the same results and either could be used. Because the unequal variance t-test can be
+used in both circumstances, it is the recommended test to perform for a two-sample CRD experiment.
+
+
+***
+## 5.7 Example - Growth hormone and mean final weight of cattle - two-sample *t*-test
+
+***
+
+**Data import**
+
+```yaml
+cows.wide <- read.csv(’hormone.csv’, header=TRUE, as.is=TRUE, strip.white=TRUE)
+cows.wide
+```
+The first few lines of the raw data are shown below:
+
+```yaml
+Hormone Placebo
+1 1784 2055
+2 1757 2028
+3 1737 1691
+4 1926 1880
+5 2054 1763
+6 1891 1613
+7 1794 1796
+8 1745 1562
+9 1831 1869
+10 1802 1796
+11 1876 NA
+12 1970 NA
+```
+
+1. **Formulate the hyotheses**
+
+```yaml
+  H: µC = µH or µC − µH = 0
+  A: µC != µH or µC − µH != 0
+```
+
+2. **Collect data and look at summary statistics**
+
+```yaml
+Hormone Placebo
+1 1784 2055
+2 1757 2028
+3 1737 1691
+4 1926 1880
+5 2054 1763
+6 1891 1613
+7 1794 1796
+8 1745 1562
+9 1831 1869
+10 1802 1796
+11 1876 NA
+12 1970 NA
+```
+
+Before doing the analysis, we need to reformat the data. We need each row to refer to a different
+subject with one column representing the factor and one column representing the response. This
+is known as converting from the wide to the long format. The `melt()` function in the `reshape2`
+package does the heavy lifting.
+
+```yaml
+cows <- melt(cows.wide,
+measure.vars=c("Hormone","Placebo"),
+variable.name="Treatment",
+value.name="Weight")
+cows$Treatment <- factor(cows$Treatment)
+cows
+```
+
+giving:
+
+```yaml
+Treatment Weight
+1 Hormone 1784
+2 Hormone 1757
+3 Hormone 1737
+4 Hormone 1926
+5 Hormone 2054
+6 Hormone 1891
+7 Hormone 1794
+8 Hormone 1745
+9 Hormone 1831
+10 Hormone 1802
+11 Hormone 1876
+12 Hormone 1970
+13 Placebo 2055
+14 Placebo 2028
+15 Placebo 1691
+16 Placebo 1880
+17 Placebo 1763
+18 Placebo 1613
+19 Placebo 1796
+20 Placebo 1562
+21 Placebo 1869
+22 Placebo 1796
+23 Placebo NA
+24 Placebo NA
+```
+
+Note how missing value are denoted
+
+We get the side-by-side dot plots and notched-box-plot using `ggplot` as before:
+
+```yaml
+# Do the side-by-side dot plots and box-plots using ggplot2
+plotprelim <- ggplot(cows, aes(x=Treatment, y=Weight))+
+geom_boxplot(alpha=0.2, notch=TRUE, outlier.shape=NA)+
+geom_jitter(size=4,position=position_jitter(width=0.2, height=0.1))+
+xlab("Treatment\n Point jittered to prevent overplotting")+
+ylab("Weight (lbs)")+
+ggtitle("Weight vs. Treatment with overlaid boxplots")
+plotprelim
+```
+
+```{r fig5-3, echo=FALSE, fig.align='default', out.width='75%'}
+knitr::include_graphics('5.3.png')
+```
+
+And then get the simple summery statistics for each group using the helper functions described in
+the Appendix:
+
+```yaml
+report <- plyr::ddply(cows, "Treatment", plyr::summarize,
+n.cows = length(Weight),
+n.missing = sum(is.na(Weight)),
+mean.weight= mean(Weight),
+sd.weight = sd(Weight))
+report
+# Hmm the report is not satisfactory because of missing values
+# adjust the sample size and statisics for missing values
+report <- plyr::ddply(cows, "Treatment", plyr::summarize,
+n.cows = length(na.omit(Weight)),
+n.missing = sum(is.na(Weight)),
+mean.weight= mean(Weight, na.rm=TRUE),
+sd.weight = sd(Weight, na.rm=TRUE))
+report
+# a fancier report
+report <- plyr::ddply(cows, "Treatment", sf.simple.summary, variable="Weight", crd
+report
+```
+
+giving:
+
+```yaml
+Treatment n.cows n.missing mean.weight sd.weight
+1 Hormone 12 0 1847.25 98.46931
+2 Placebo 12 2 NA NA
+Treatment n.cows n.missing mean.weight sd.weight
+1 Hormone 12 0 1847.25 98.46931
+2 Placebo 10 2 1805.30 160.82568
+Treatment n nmiss mean sd se lcl ucl
+1 Hormone 12 0 1847.25 98.46931 28.42564 1784.686 1909.814
+2 Placebo 12 2 1805.30 160.82568 50.85755 1690.252 1920.348
+```
+
+3. **Find the test-statistic, the p-value and make a decision**
+
+```yaml
+result <- t.test(Weight ~ Treatment, data=cows)
+result$diff.in.means <- sum(result$estimate*c(1,-1))
+names(result$diff.in.means)<- "diff.in.means"
+result
+cat("Estimated difference in means: ",result$diff.in.means,"\n")
+cat("Estimated se for diff in means: ",result$stderr,"\n")
+```
+
+with output:
+
+```yaml
+Welch Two Sample t-test
+data: Weight by Treatment
+t = 0.72002, df = 14.355, p-value = 0.4831
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+-82.72091 166.62091
+sample estimates:
+mean in group Hormone mean in group Placebo
+1847.25 1805.30
+Estimated difference in means: 41.95
+Estimated se for diff in means: 58.2624
+```
+
+The t.test() function can also be used to obtain the two-sample equal-variance t-test:
+
+```yaml
+result <- t.test(Weight ~ Treatment, data=cows, var.equal=TRUE)
+result$diff.in.means <- sum(result$estimate*c(1,-1))
+names(result$diff.in.means)<- "diff.in.means"
+result
+cat("Estimated difference in means: ",result$diff.in.means,"\n")
+cat("Estimated se for diff in means: ",result$stderr,"\n")
+```
+
+with output:
+```yaml
+Two Sample t-test
+data: Weight by Treatment
+t = 0.75204, df = 20, p-value = 0.4608
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+-74.40778 158.30778
+sample estimates:
+mean in group Hormone mean in group Placebo
+1847.25 1805.30
+Estimated difference in means: 41.95
+Estimated se for diff in means: 55.78131
+```
+***
+## 5.8 Power and sample size
+
+***
+
+### 5.8.3 Example of power analysis/sample size determination
+
+*Using a package to determine power*
+
+R uses the `power.t.test()` function for power computations with one or two groups. This function has
+four arguments corresponding to the quantities required for a power computation and if you specify 3 of the 4 arguments, the 4th argument is computed. The arguments are n, the sample size; delta, the
+difference in the means; sd, the standard deviation; and power, the power.
+
+For the Hormone example in the previous section, we call the `power.t.test()` function using
+
+```yaml
+power <- power.t.test(delta=50, sd=100, power=.80, sig.level=0.05,
+type="two.sample",alternative="two.sided")
+power
+```
+
+with output:
+
+```yaml
+Two-sample t test power calculation
+n = 63.76576
+delta = 50
+sd = 100
+sig.level = 0.05
+power = 0.8
+alternative = two.sided
+NOTE: n is number in *each* group
+```
+
+It is often of interest to plot the power as a function of the sample size or effect size, or in general
+plot how two of the four variables in a power analysis tradeoff.
+
+This requires a bit of programming in R, but is not difficult. Here is an example of the trade off
+between the power and sample size when the difference to detect is fixed.
+
+```yaml
+library(plyr)
+my.results <- ldply(seq(2,100,2), function(n){
+# Compute the power for this value of n
+power <- power.t.test(delta=50, sd=100, n=n, sig.level=0.05,
+type="two.sample", alternative="two.sided")
+res <- c(n,power$power)
+names(res) <- c("n","power")
+res
+})
+my.results[1:10,]
+```
+
+Once the power is computed for a range of sample sizes, the tradeoff can be plotted:
+
+```yaml
+plot002 <- ggplot(my.results,aes(x=n,y=power))+
+ggtitle("Power vs. sample size")+
+xlab("Sample size in each group")+
+ylab("Power")+ylim(0,1)+
+geom_line()+
+geom_hline(aes(yintercept=0.80))+ #ref line
+geom_vline(aes(xintercept=64))
+plot002
+```
+
+The `abline()` function can place horizontal and vertical lines which give the same results as seen
+previously.
+
+```{r fig5-4, echo=FALSE, fig.align='default', out.width='75%'}
+knitr::include_graphics('5.4.png')
+```
+
+***
+## 5.9 Summary of two-sample *t*-tests
+
+***
+
+```yaml
+Objective: Compare MEANS between two groups (the treatments)
+Experimental Design:
+• Complete randomization of treatments to two experimental groups or random sample from two
+separate populations.
+• No pairing, blocking, or stratification.
+• Ensure that the Experimental Unit (EU) is the same as the observational units (OU) to avoid
+pseudoreplication.
+Data structure:
+Two columns in the dataset.
+• X column for the treatment. This should be coded using alphanumeric codes, e.g. use "m" and "f"
+for sex rather than 0 and 1.
+• Y column for the response. This should be numeric.
+The columns can be an any order. The rows can be in any order.
+The dataset is read in the usual ways. If the X column is NOT alphanumeric, you will need to declare it
+as nominal/ordinal scale (JMP) or as a factor (R) or using the class statement (SAS).
+Missing values/ Unbalance:
+It is not necessary that each group has the same number of observations. If there are missing values,
+ensure that they are Missing Completely at Random (MCAR).
+Preliminary Plot:
+A side-by-side dot plot with a box-plot overlaid. Notches (indicating approximate confidence interals
+for the median) are optional. Check for outliers. Check for extreme skewness (very unequal whiskers in
+the box plot; many outliers in one tail).
+Table 1:
+Compute a table of sample size, mean, and SD for each group. Check that the SD are not too disparate.
+Analysis:
+ALWAYS ALWAYS use the two-sample unequal variance t-test. See Ruxton, G.D. (2006). The unequal
+variance t-test is an underused alternative to Student’s t-test and the Mann-Whitney U test. Behavioral
+Ecology, 17, 688-690. http://dx.doi.org/10.1093/beheco/ark016
+Analysis code:
+• JMP: Analyze->Fit Y-by-X. Choose t-test from the drop down menu .
+• SAS: Proc TTEST; Class X; Var Y;
+• R: t.test( Y ∼ X, data=blah)
+Followup:
+Estimate the DIFFERENCE in MEANS along with a SE. This is done automatically in JMP and SAS; in
+R you need to compute the difference in the means and the se as shown in the notes.
+What to write:
+• Materials and Methods: The unequal variance t-test (Ruston, 2006) was used to compare the
+means in the two groups.
+• Results: We found evidence of a difference in the MEAN response-variable-name (p=xxxx). The
+estimated DIFFERENCE in the MEAN xxx was xxxx (SE xxxx).
+• Results: We found no evidence of a difference in the MEAN response-variable-name (p=xxxx).
+The estimated DIFFERENCE in the MEAN xxx was xxxx (SE xxxx).
+Report the actual p-value and not just if it was < :05 or > 0:05. Even if you fail to detect an effect,
+still report the effect size and standard error so that the reader can determine if the difference in means
+is small (with a small se) or if the se is so large that nothing was learned from the study.
+Power Analysis:
+You will need to know:
+• The biologically effect size that is important. THIS IS HARD and not a statistical question.
+• The SD (not the se) of the INDIVIDUAL data points.
+• Target power of 0.80 at alpha=0.05 or target power of 0.90 at alpha=0.10.
+Functions to use estimate power:
+• JMP: DOE -> Power -> Two groups.
+• R: power.t.test()
+• SAS: Proc Power;
+• Web: Russ Lenth’s power and sample size pages http://homepage.stat.uiowa.edu/
+~rlenth/Power/ but it requires JAVA to be installed.
+Comments:
+Always use the Welch t-test as it works regardless if the variances are equal or unequal. It is not necessary
+(and not recommended) to do an initial test for the equality of variances (e.g. using a Levene test) and
+then decide if the equal or unequal variance t-test is to be run. Refer to the Ruxton (2006) paper cited
+earlier.
+Be VERY AFRAID of pseudoreplication.
+```
+***
+## 5.10 ANOVA approach - Introduction
+
+***
+
+### 5.10.1 An intuitive explanation for the ANOVA method
+
+Consider the following two experiments to examine the yields of three different varieties of wheat.
+
+In both experiments, nine plots of land were randomized to three different varieties (three plots for
+each variety) and the yield was measured at the end of the season.
+
+The two experiments are being used just to illustrate how ANOVA works and to compare two
+possible outcomes where, in one case, you find evidence of a difference in the population means
+and, in the other case, you fail to find evidnece of a difference in the population means. In an
+actual experiment, you would only do a single experiment. They are not real data - they were
+designed to show you how the method works!
+
+Here are the raw data:
+
+```yaml
+      Experiment I   Experiment II
+         Method          Method
+        A   B  C      A   B  C
+        ---------     ---------
+        65 84 75      80 100 60
+        66 85 76      65 85 75
+        64 86 74      50 70 90
+        ---------     ---------
+Average 65 85 75      65 85 75
+```
+Which experiment has ‘better’ evidence of a difference in the population mean yield among the
+varieties?
+
+Let’s look at dot plots for both experiments:
+
+```{r fig5-5, echo=FALSE, fig.align='default', out.width='75%'}
+knitr::include_graphics('5.5.png')
+```
+
+Lets look at those two experiments in more detail and apply an analysis.
+
+1. **Formulate the hypotheses**
+
+H: µ1 = µ2 = µ3 or all means are equal
+
+A: not all the means are equal or at least one mean is different from the rest
+
+2. **Collect some data and compute summary statistics**
+
+Here are the dot plots for both experiments and summary statistics:
+
+```{r fig5-6, echo=FALSE, fig.align='default', out.width='75%'}
+knitr::include_graphics('5.6.png')
+```
+
+3. **Find a test statistic and p-value.**
+
