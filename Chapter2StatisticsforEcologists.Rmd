@@ -27,13 +27,13 @@ devtools::install_github("adletaw/captioner")
 
 <style>
 p.caption {
-  font-size: 0.6cm;
+  font-size: 0.7cm;
 }
 </style>
 
 \newpage
 
-# Chapter 2: Introduction to Statistics
+# Chapter 3: Introduction to Statistics
 
 *****
 ## 2.2 Parameters, statistics, standard deviations, standard error
