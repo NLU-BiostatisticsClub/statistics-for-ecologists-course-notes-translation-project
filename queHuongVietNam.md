@@ -1,1 +1,0 @@
-một ngày mới khi ánh nắng lên, gió khẽ đưa trên bông lúa vàng
