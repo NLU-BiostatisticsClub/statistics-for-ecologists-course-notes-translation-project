@@ -36,4 +36,4 @@ source("common.R")
 
 ### Trường hợp không thỏa các giả thuyết thống kê
 
-### Một số vấn đề với giá trị *p*-value - các chuyên gia nói gì về vấn đề này?
+### Một số vấn đề với giá trị *p*-value - Các chuyên gia nói gì về vấn đề này?
