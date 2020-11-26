@@ -1,0 +1,7 @@
+# Giới thiệu về thiết kế thí nghiệm và các thuật ngữ chuyên ngành
+
+```{r include = FALSE}
+source("common.R")
+```
+
+

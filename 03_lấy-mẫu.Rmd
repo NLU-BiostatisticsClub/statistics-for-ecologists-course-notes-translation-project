@@ -1,0 +1,59 @@
+# Lấy Mẫu
+
+```{r include = FALSE}
+source("common.R")
+```
+
+## Giới thiệu
+
+### Phân biệt giữa lấy mẫu và thiết kế thí nghiệm
+
+### Tại sao cần thiết phải lấy mẫu mà không tổng điều tra toàn bộ?
+
+### Các bước cơ bản khi thực hiện một cuộc khảo sát
+
+### Lấy mẫu ngẫu nhiên và lấy mẫu phi ngẫu nhiên
+
+### Tầm quan trọng của yếu tố ngẫu nhiên trong trong thiết kế một khảo sát
+
+### Model vs. Design based sampling
+
+### Phần mềm
+
+## Tổng quan về các phương pháp lấy mẫu
+
+### Lẫy mẫu ngẫu nhiên đơn giản
+
+### Lẫy mẫu có phương pháp
+
+### Lẫy mẫu theo nhóm
+
+### Lẫy mẫu nhiều bước
+
+### Lấy mẫu nhiều giai đoạn
+
+### Panel design - sử dụng khi khảo sát dài hạn
+
+### Sampling non-discrete objects
+
+### Các điểm quan trọng cần xem xét khi thiết hay phân tích một khảo sát
+
+## Kí hiệu
+
+## Lấy mẫu ngẫu nhiên đơn giản không hoàn lại (SRSWOR)
+
+### Các kết quả chính
+
+### Ước lượng trung bình đám đông
+
+### Ước lượng tổng đám đông
+
+### Ước lượng tỉ lệ đám đông
+
+### Ví dụ - ước lượng tổng số lần câu được cá tại một địa điểm câu cá giải trí
+
+## Xác định kích thước mẫu cho một mẫu ngẫu nhiên đơn giản
+
+### Ví dụ - How many angling-parties to survey
+
+##
