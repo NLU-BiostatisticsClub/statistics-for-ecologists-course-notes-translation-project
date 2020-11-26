@@ -40,4 +40,20 @@ source("common.R")
 
 ## Kí hiệu
 
-## 
+## Lấy mẫu ngẫu nhiên đơn giản không hoàn lại (SRSWOR)
+
+### Các kết quả chính
+
+### Ước lượng trung bình đám đông
+
+### Ước lượng tổng đám đông
+
+### Ước lượng tỉ lệ đám đông
+
+### Ví dụ - ước lượng tổng số lần câu được cá tại một địa điểm câu cá giải trí
+
+## Xác định kích thước mẫu cho một mẫu ngẫu nhiên đơn giản
+
+### Ví dụ - How many angling-parties to survey
+
+##
