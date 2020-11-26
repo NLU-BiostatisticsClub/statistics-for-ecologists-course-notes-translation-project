@@ -1,25 +1,25 @@
-# Mở đầu 
+# Mở đầu
 
 ```{r include = FALSE}
 source("common.R")
 ```
 
-## Một số bài báo thú vị
+## Giới thiệu một số bài báo yêu thích
 
 ### Hurlbert, 1984. Pseudoreplication
 
 ### Ruxton, 2006. The Welch t-test
- 
-### warton et al. 2011. The arcsine is asinine.
 
-### Ioannidis, 2005. Why most published research findings are false.
+### Warton et al. 2011. The arcsine is asinine.
 
-## Giới thiệu 
+### Ioannidis, 2005. Why most pulished research findings are false.
 
-## Một số phương pháp ghi chú hiệu quả
+## Giới thiệu
 
-## It’s all $\Gamma \rho \epsilon \epsilon \kappa$ to me
+## Các phương pháp ghi chú hiệu quả trong học tập
 
-## Nên chọn phần mềm xử lí thống kê nào?
+## It's all $\Gamma \rho \epsilon \epsilon \kappa$ to me
 
-## FAQ - Một số câu hỏi thường gặp
+## Sử dụng phần mềm máy tính để làm việc với thống kê
+
+## Các câu hỏi thường gặp
