@@ -6,6 +6,8 @@ source("common.R")
 
 
 ## TRRGET - Tổng quan về suy luận thống kê
+hjhkjhkhkjhkjhkljhlkj
+jkjljlkjljljk
 
 ## Tham số, Số liệu thống kê, Độ lệch chuẩn và Sai số chuẩn
 
